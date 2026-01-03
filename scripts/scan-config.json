@@ -1,10 +1,19 @@
 {
-  "scanDir": "./src/main/java",
+  "scanDir": "/Users/liuyuan/workspace/onetouch-ames-base",
   "annotations": [
-    "org.springframework.stereotype.Service",
     "org.springframework.web.bind.annotation.RestController",
-    "org.springframework.stereotype.Component"
+    "org.springframework.stereotype.Controller",
+    "com.alibaba.boot.hsf.annotation.HSFProvider",
+    "com.alibaba.boot.ons.annotation.Subscription"
   ],
-  "interfaces": [],
+  "interfaces": [
+    "com.aliyun.openservices.ons.api.MessageListener",
+    "com.aliyun.openservices.ons.api.order.MessageOrderListener",
+    "com.alibaba.rocketmq.client.consumer.listener.MessageListenerConcurrently",
+    "com.alibaba.rocketmq.client.consumer.listener.MessageListenerOrderly"
+  ],
+  "classes": [
+    "com.alibaba.schedulerx.worker.processor.JavaProcessor"
+  ],
   "excludeAbstract": true
 }

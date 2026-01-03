@@ -18,6 +18,7 @@ class JavaFileScanner {
     this.config = config;
     this.annotations = config.annotations || [];
     this.interfaces = config.interfaces || [];
+    this.classes = config.classes || []; // 需要扫描的父类
     this.excludeAbstract = config.excludeAbstract !== false;
     this.scanDir = config.scanDir || './src/main/java';
     this.parsedFiles = new Map(); // Cache parsed AST
@@ -188,6 +189,79 @@ class JavaFileScanner {
   }
 
   /**
+   * Get the class that a class extends (parent class)
+   */
+  getExtendedClass(node) {
+    const classBody = node.children?.normalClassDeclaration?.[0]?.children?.classExtends?.[0];
+    if (!classBody) return null;
+
+    const classType = classBody.children?.classType?.[0];
+    if (!classType) return null;
+
+    // Get simple name directly from Identifier
+    if (classType.children?.Identifier?.[0]?.image) {
+      return classType.children.Identifier[0].image;
+    }
+
+    // Handle qualified name if it has typeName (for more complex cases)
+    const typeName = classType.children?.typeName?.[0];
+    if (typeName) {
+      if (typeName.children?.Identifier?.[0]?.image) {
+        return typeName.children.Identifier[0].image;
+      }
+      if (typeName.children?.packageOrTypeName?.[0]) {
+        const ptn = typeName.children.packageOrTypeName[0];
+        if (ptn.children?.Identifier) {
+          return ptn.children.Identifier.map(id => id.image).join('.');
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Check if a class directly or indirectly extends a target class
+   * 支持简单类名和全限定类名匹配
+   * 外部类（不在扫描目录中）直接比较类名
+   */
+  extendsTargetClass(node, targetClass, javaFiles, visited = new Set()) {
+    const typeName = this.getTypeName(node);
+    const nodeKey = `${typeName || 'unknown'}`;
+    if (visited.has(nodeKey)) {
+      return false;
+    }
+    visited.add(nodeKey);
+
+    // Check direct extension
+    const extendedClass = this.getExtendedClass(node);
+    if (!extendedClass) {
+      return false;
+    }
+
+    // Extract simple class name
+    const simpleName = extendedClass.includes('.') ? extendedClass.split('.').pop() : extendedClass;
+    const targetSimpleName = targetClass.includes('.') ? targetClass.split('.').pop() : targetClass;
+
+    // Match if direct parent matches (simple name or full qualified name)
+    if (extendedClass === targetClass || simpleName === targetSimpleName) {
+      return true;
+    }
+
+    // Check if parent class extends the target
+    const parentDecl = this.findClassDeclaration(simpleName, javaFiles);
+    if (parentDecl) {
+      if (this.extendsTargetClass(parentDecl.node, targetClass, javaFiles, visited)) {
+        return true;
+      }
+    }
+    // 如果父类不在扫描目录中（外部类），且直接父类名不匹配，则继承链到此为止
+    // 例如：外部类 com.xxx.JavaProcessor 不在扫描目录，无需继续查找
+
+    return false;
+  }
+
+  /**
    * Get type declaration (class or interface) from AST
    */
   getTypeDeclaration(ast) {
@@ -294,6 +368,22 @@ class JavaFileScanner {
   }
 
   /**
+   * Check if node extends any configured class
+   */
+  hasConfiguredClass(node, javaFiles) {
+    if (this.classes.length === 0) {
+      return false;
+    }
+
+    for (const targetClass of this.classes) {
+      if (this.extendsTargetClass(node, targetClass, javaFiles)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Main scan logic
    */
   scan() {
@@ -318,8 +408,11 @@ class JavaFileScanner {
       // Check for configured interfaces
       const hasInterfaceMatch = this.hasConfiguredInterface(typeNode, javaFiles);
 
-      // Match if either condition is met
-      if (hasAnnotationMatch || hasInterfaceMatch) {
+      // Check for configured classes (inheritance)
+      const hasClassMatch = this.hasConfiguredClass(typeNode, javaFiles);
+
+      // Match if any condition is met
+      if (hasAnnotationMatch || hasInterfaceMatch || hasClassMatch) {
         matchedFiles.push(filePath);
       }
     }
@@ -363,6 +456,7 @@ Config file format (JSON):
   "scanDir": "./src/main/java",
   "annotations": ["org.springframework.stereotype.Service", ...],
   "interfaces": ["com.example.MyInterface", ...],
+  "classes": ["com.example.BaseClass", ...],
   "excludeAbstract": true
 }
 `);
