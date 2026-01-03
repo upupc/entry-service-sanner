@@ -1,0 +1,10 @@
+{
+  "scanDir": "./src/main/java",
+  "annotations": [
+    "org.springframework.stereotype.Service",
+    "org.springframework.web.bind.annotation.RestController",
+    "org.springframework.stereotype.Component"
+  ],
+  "interfaces": [],
+  "excludeAbstract": true
+}
