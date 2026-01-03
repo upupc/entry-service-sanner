@@ -38,6 +38,8 @@ tmp/
 # ========== OpenSpec 生成文件 ==========
 *.openspec.json
 openspec
+AGENTS.md
+CLAUDE.md
 
 # ========== 其他 ==========
 *.bak
