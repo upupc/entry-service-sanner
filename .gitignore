@@ -37,7 +37,7 @@ tmp/
 
 # ========== OpenSpec 生成文件 ==========
 *.openspec.json
-openspec/generated/
+openspec
 
 # ========== 其他 ==========
 *.bak
