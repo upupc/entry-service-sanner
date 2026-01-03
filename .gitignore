@@ -1,0 +1,46 @@
+# ========== OS 通用 ==========
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+._*
+
+# ========== IDE ==========
+.idea/
+.claude/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.code-workspace
+
+# ========== 构建产物 ==========
+target/
+build/
+out/
+dist/
+*.jar
+*.class
+*.o
+*.a
+*.so
+*.dylib
+node_modules/
+
+# ========== 日志和临时文件 ==========
+*.log
+logs/
+temp/
+tmp/
+*.tmp
+
+# ========== OpenSpec 生成文件 ==========
+*.openspec.json
+openspec/generated/
+
+# ========== 其他 ==========
+*.bak
+*.backup
+*.orig
+*.rej
